@@ -28,6 +28,7 @@ public class BusyBeaver2 {
 
     private static final int numStates = 4;
 
+    private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
     private static final AtomicInteger maxSteps = new AtomicInteger();
     private static final AtomicLong executed = new AtomicLong();
     private static final AtomicLong infLoops = new AtomicLong();
@@ -78,15 +79,13 @@ public class BusyBeaver2 {
         } else {
             tmState.setNextTransition(Transition.HALT); //just need to make current state non-null, simce it will affect on getLastState() response
             int loopMaxState = Math.min(tmState.getLastState() + 1, numStates);
-            for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) {
-                for (Direction dir : Direction.values()) {
-                    for (int nextState = 1; nextState <= loopMaxState; nextState++) {
-                        tmState.setNextTransition(new Transition(newSymbol, dir, nextState));
-                        tmState.applyTransition();
-                        recursiveTuringMachine(tmState, nTransitions + 1);
-                        tmState.reverseTransition();
-                    }
-                }
+            for (int nextState = 1; nextState <= loopMaxState; nextState++) {
+                ALL_TRANSITIONS[nextState].forEach(t -> {
+                    tmState.setNextTransition(t);
+                    tmState.applyTransition();
+                    recursiveTuringMachine(tmState, nTransitions + 1);
+                    tmState.reverseTransition();
+                });
             }
         }
         tmState.setNextTransition(null);
@@ -121,6 +120,20 @@ public class BusyBeaver2 {
             System.out.println("Max time reached: " + MAX_RUNTIME);
             System.exit(0);
         }
+    }
+
+    private static List<Transition>[] generateAllTransitions() {
+        List<Transition>[] result = new List[numStates + 1];
+        for (int nextState = 1; nextState <= numStates; nextState++) { // All next states
+            List<Transition> list = new ArrayList<>();
+            for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) { // All possible writes
+                for (Direction dir : Direction.values()) { // All directions
+                    list.add(new Transition(newSymbol, dir, nextState));
+                }
+            }
+            result[nextState] = list;
+        }
+        return result;
     }
 
     private static void printWinners() {
