@@ -1,5 +1,9 @@
 package com.sliva.turingmachine;
 
+import static com.sliva.turingmachine.Transition.STARTING_STATE;
+import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
+import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
+import java.io.PrintStream;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -8,13 +12,21 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class PrintUtils {
 
-    public static void runAndPrint(TMState tms) {
+    public static void printTransisitons(TMProgram tmProgram, PrintStream out) {
+        for (int state = STARTING_STATE; state <= tmProgram.getSize(); state++) {
+            for (byte symbol = SYMBOL_ZERO; symbol <= SYMBOL_ONE; symbol++) {
+                out.println("" + state + ":" + symbol + "  " + tmProgram.getTransition(state, symbol));
+            }
+        }
+    }
+
+    public static void runAndPrint(TMState tms, PrintStream out) {
         MinMax head = getMinMaxHeadPos(tms);
 
-        System.out.println(" step  " + StringUtils.rightPad("tape", (head.getMax() - head.getMin() + 1) * 3) + "  state");
+        out.println(" step  " + StringUtils.rightPad("tape", (head.getMax() - head.getMin() + 1) * 3) + "  state");
         do {
             tms.applyTransition();
-            System.out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 5) + "  "
+            out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 5) + "  "
                     + toStringTape(tms.getTape(), head.getMin(), head.getMax(), tms.getPosTape()) + "  "
                     + (tms.isHaltState() ? "HALT" : Integer.toString(tms.getState())));
         } while (!tms.isHaltState());
@@ -33,6 +45,7 @@ public final class PrintUtils {
                 maxPos = _tms.getPosTape();
             }
         } while (!_tms.isHaltState());
+        System.out.println("MinMax: (" + minPos + "," + maxPos + "), tapeSize=" + (maxPos - minPos + 1) + ", steps=" + _tms.getStep());
         return new MinMax(minPos, maxPos);
     }
 

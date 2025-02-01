@@ -1,6 +1,5 @@
 package com.sliva.turingmachine;
 
-import static com.sliva.turingmachine.Transition.STARTING_STATE;
 import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
 import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.text.NumberFormat;
@@ -23,10 +22,10 @@ public class BusyBeaver2 {
     private static final int STEP_LIMIT = 20000;
     private static final int TAPE_LIMIT = 200;
     private static final int MAX_WINNERS = 6;
-    private static final Duration MAX_RUNTIME = Duration.ofMinutes(1);
+    private static final Duration MAX_RUNTIME = Duration.ofMinutes(1000);
     private static final long startTimestamp = System.currentTimeMillis();
 
-    private static final int numStates = 4;
+    private static final int numStates = 5;
 
     private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
     private static final TMState[] TM_STATE_BUFFER = new TMState[numStates * 2];
@@ -143,22 +142,14 @@ public class BusyBeaver2 {
         System.out.println("winningPrograms: " + winningPrograms.size());
         winningPrograms.forEach(t -> {
             System.out.println();
-            printTransisitons(t);
+            PrintUtils.printTransisitons(t, System.out);
             System.out.println();
-            PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()));
+            PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()), System.out);
         });
 
 //        System.out.println("---");
 //        TuringMachineWithHistory tm = new TuringMachineWithHistory(STEP_LIMIT);
 //        tm.run(winningPrograms.get(0).toTransitionsArray());
 //        tm.printHistory();
-    }
-
-    private static void printTransisitons(TMProgram tmProgram) {
-        for (int state = STARTING_STATE; state <= tmProgram.getSize(); state++) {
-            for (byte symbol = SYMBOL_ZERO; symbol <= SYMBOL_ONE; symbol++) {
-                System.out.println("" + state + ":" + symbol + "  " + tmProgram.getTransition(state, symbol));
-            }
-        }
     }
 }
