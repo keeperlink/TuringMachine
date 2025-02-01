@@ -4,6 +4,7 @@ import static com.sliva.turingmachine.Transition.STARTING_STATE;
 import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
 import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.io.PrintStream;
+import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -20,15 +21,17 @@ public final class PrintUtils {
         }
     }
 
-    public static void runAndPrint(TMState tms, PrintStream out) {
+    public static void runAndPrint(TMState tms, PrintStream out, Function<TMState, Boolean> doPrint) {
         MinMax head = getMinMaxHeadPos(tms);
 
         out.println(" step  " + StringUtils.rightPad("tape", (head.getMax() - head.getMin() + 1) * 3) + "  state");
         do {
             tms.applyTransition();
-            out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 5) + "  "
-                    + toStringTape(tms.getTape(), head.getMin(), head.getMax(), tms.getPosTape()) + "  "
-                    + (tms.isHaltState() ? "HALT" : Integer.toString(tms.getState())));
+            if (doPrint != null && doPrint.apply(tms)) {
+                out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 5) + "  "
+                        + toStringTape(tms.getTape(), head.getMin(), head.getMax(), tms.getPosTape()) + "  "
+                        + (tms.isHaltState() ? "HALT" : Integer.toString(tms.getState())));
+            }
         } while (!tms.isHaltState());
     }
 

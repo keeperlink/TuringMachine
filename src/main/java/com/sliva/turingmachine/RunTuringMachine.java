@@ -28,15 +28,36 @@ public class RunTuringMachine {
                      0\t1RB\t1RC\t1RD\t1LA\t1RH
                      1\t1LC\t1RB\t0LE\t1LD\t0LA
                      """;
-        TMProgram tmProgram = readProgram(bb4);
+        TMProgram tmProgram = readProgram(bb5);
         PrintUtils.printTransisitons(tmProgram, System.out);
 
         TMState tmState = new TMState(tmProgram, new byte[TAPE_LIMIT * 2], STEP_LIMIT, 0, STARTING_STATE, TAPE_LIMIT);
+
         try ( PrintStream filePrintStream = new PrintStream(new FileOutputStream("output.txt"))) {
             PrintUtils.printTransisitons(tmProgram, filePrintStream);
-            PrintUtils.runAndPrint(tmState, filePrintStream);
+            TMState tmState2 = tmState.copy();
+            runAndPrintResultTape(tmState2, filePrintStream);
+            int totalSteps = tmState2.getStep();
+            //print tape for the first and last 2000 steps
+            PrintUtils.runAndPrint(tmState, filePrintStream, tms -> tms.getStep() < 2000 || tms.getStep() > totalSteps - 2000);
         }
+    }
 
+    private static void runAndPrintResultTape(TMState tms, PrintStream out) {
+        int minPos = Integer.MAX_VALUE;
+        int maxPos = Integer.MIN_VALUE;
+        while (!tms.isHaltState()) {
+            tms.applyTransition();
+            if (tms.getPosTape() < minPos) {
+                minPos = tms.getPosTape();
+            }
+            if (tms.getPosTape() > maxPos) {
+                maxPos = tms.getPosTape();
+            }
+        }
+        out.println("MinMax: (" + minPos + "," + maxPos + "), tapeSize=" + (maxPos - minPos + 1) + ", steps=" + tms.getStep());
+        out.println("Final Tape:");
+        out.println(PrintUtils.toStringTape(tms.getTape(), minPos, maxPos, tms.getPosTape()));
     }
 
     private static TMProgram readProgram(String str) {

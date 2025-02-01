@@ -63,7 +63,7 @@ public class BusyBeaver {
         });
 
         System.out.println("---");
-        PrintUtils.runAndPrint(new TMState(new TMProgram(winningTransitions.get(0)), maxSteps.get(), maxSteps.get()), System.out);
+        PrintUtils.runAndPrint(new TMState(new TMProgram(winningTransitions.get(0)), maxSteps.get(), maxSteps.get()), System.out, null);
 
         System.out.println();
         System.out.println("BB(" + numStates + ") = " + nf.format(maxSteps.get()));

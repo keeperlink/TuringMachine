@@ -144,7 +144,7 @@ public class BusyBeaver2 {
             System.out.println();
             PrintUtils.printTransisitons(t, System.out);
             System.out.println();
-            PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()), System.out);
+            PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()), System.out, null);
         });
 
 //        System.out.println("---");
