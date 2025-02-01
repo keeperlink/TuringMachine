@@ -110,4 +110,14 @@ public class TMState {
     public TMState copy() {
         return new TMState(tmProgram.copy(), Arrays.copyOf(tape, tape.length), maxSteps, step, state, posTape);
     }
+
+    public TMState fillFrom(TMState t) {
+        tmProgram.fillFrom(t.getTmProgram());
+        System.arraycopy(t.tape, 0, this.tape, 0, t.tape.length);
+        this.step = t.step;
+        this.state = t.state;
+        this.posTape = t.posTape;
+        this.oldState = HALT_STATE;
+        return this;
+    }
 }

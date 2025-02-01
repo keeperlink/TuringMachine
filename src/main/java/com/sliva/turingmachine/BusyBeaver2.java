@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class BusyBeaver2 {
 
-    private static final int STEP_LIMIT = 200;
-    private static final int TAPE_LIMIT = 20;
+    private static final int STEP_LIMIT = 20000;
+    private static final int TAPE_LIMIT = 200;
     private static final int MAX_WINNERS = 6;
     private static final Duration MAX_RUNTIME = Duration.ofMinutes(1);
     private static final long startTimestamp = System.currentTimeMillis();
@@ -29,6 +29,7 @@ public class BusyBeaver2 {
     private static final int numStates = 4;
 
     private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
+    private static final TMState[] TM_STATE_BUFFER = new TMState[numStates * 2];
     private static final AtomicInteger maxSteps = new AtomicInteger();
     private static final AtomicLong executed = new AtomicLong();
     private static final AtomicLong infLoops = new AtomicLong();
@@ -37,7 +38,10 @@ public class BusyBeaver2 {
     private static final NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
     public static void main(String[] args) {
-        TMState tmState = new TMState(numStates, STEP_LIMIT, TAPE_LIMIT);
+        for (int i = 0; i < TM_STATE_BUFFER.length; i++) {
+            TM_STATE_BUFFER[i] = new TMState(numStates, STEP_LIMIT, TAPE_LIMIT);
+        }
+        TMState tmState = TM_STATE_BUFFER[0];
         for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) {
             tmState.setNextTransition(new Transition(newSymbol, Direction.RIGHT, 2));
             tmState.applyTransition();
@@ -57,8 +61,8 @@ public class BusyBeaver2 {
     }
 
     private static void recursiveTuringMachine(TMState tmState, int nTransitions) {
-        TMState _tmState = tmState.copy();
-        if (tmState.hasNextTransition()) {
+        TMState _tmState = TM_STATE_BUFFER[nTransitions].fillFrom(tmState);
+        if (_tmState.hasNextTransition()) {
             do {
                 _tmState.applyTransition();
                 if (checkFinished(_tmState)) {
@@ -75,20 +79,18 @@ public class BusyBeaver2 {
             tmState.setNextTransition(Transition.HALT);
             tmState.applyTransition();
             checkFinished(tmState);
-            tmState.reverseTransition();
         } else {
             tmState.setNextTransition(Transition.HALT); //just need to make current state non-null, simce it will affect on getLastState() response
             int loopMaxState = Math.min(tmState.getLastState() + 1, numStates);
             for (int nextState = 1; nextState <= loopMaxState; nextState++) {
-                ALL_TRANSITIONS[nextState].forEach(t -> {
+                for (Transition t : ALL_TRANSITIONS[nextState]) {
                     tmState.setNextTransition(t);
                     tmState.applyTransition();
                     recursiveTuringMachine(tmState, nTransitions + 1);
                     tmState.reverseTransition();
-                });
+                }
             }
         }
-        tmState.setNextTransition(null);
     }
 
     private static boolean checkFinished(TMState tmState) {
