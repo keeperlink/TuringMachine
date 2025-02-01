@@ -53,6 +53,27 @@ public class TMProgram {
         program[state - 1] = (inst == null) ? new TMInstruction(symbol, t) : inst.transition(symbol, t);
     }
 
+    public int getLastState() {
+        int s = getSize();
+        while (s > 0 && !hasInstruction(s)) {
+            s--;
+        }
+        return s;
+    }
+
+    public int getTransitionsCount() {
+        int s = 0;
+        for (TMInstruction i : program) {
+            if (i.getTransition(SYMBOL_ZERO) != null) {
+                s++;
+            }
+            if (i.getTransition(SYMBOL_ONE) != null) {
+                s++;
+            }
+        }
+        return s;
+    }
+
     public TMProgram copy() {
         return new TMProgram(Arrays.copyOf(program, program.length));
     }

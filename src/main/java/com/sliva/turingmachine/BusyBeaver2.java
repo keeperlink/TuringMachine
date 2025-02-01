@@ -81,13 +81,10 @@ public class BusyBeaver2 {
             for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) {
                 for (Direction dir : Direction.values()) {
                     for (int nextState = 1; nextState <= loopMaxState; nextState++) {
-//                        TMState tmState2 = tmState;
-//                        tmState = tmState.copy();
                         tmState.setNextTransition(new Transition(newSymbol, dir, nextState));
                         tmState.applyTransition();
                         recursiveTuringMachine(tmState, nTransitions + 1);
                         tmState.reverseTransition();
-//                        tmState = tmState2;
                     }
                 }
             }

@@ -62,11 +62,11 @@ public class TMState {
     }
 
     public int getLastState() {
-        int s = tmProgram.getSize();
-        while (s > 0 && !tmProgram.hasInstruction(s)) {
-            s--;
-        }
-        return s;
+        return tmProgram.getLastState();
+    }
+
+    public int getTransitionsCount() {
+        return tmProgram.getTransitionsCount();
     }
 
     public void applyTransition() {
