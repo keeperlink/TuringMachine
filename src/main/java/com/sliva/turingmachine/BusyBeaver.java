@@ -1,5 +1,8 @@
 package com.sliva.turingmachine;
 
+import static com.sliva.turingmachine.Transition.STARTING_STATE;
+import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
+import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,24 +14,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 
 public class BusyBeaver {
 
-    private static final byte HALT_STATE = 0;
-    private static final byte STARTING_STATE = 1;
-    private static final byte SYMBOL_ZERO = 0;
-    private static final byte SYMBOL_ONE = 1;
     private static final int STEP_LIMIT = 200;
     private static final int MAX_WINNING_TRANSITIONS = 20;
     private static final NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
     private static final Map<Integer, AtomicLong> countPerSteps = new ConcurrentHashMap<>();
     private static final List<Transition[]> winningTransitions = Collections.synchronizedList(new ArrayList<>());
 
-    private static final byte numStates = 3;
+    private static final int numStates = 4;
 
-    private static final AtomicLong maxSteps = new AtomicLong();
+    private static final AtomicInteger maxSteps = new AtomicInteger();
     private static final AtomicLong executed = new AtomicLong();
     private static final AtomicLong skipped = new AtomicLong();
     private static final AtomicLong infLoops = new AtomicLong();
@@ -53,15 +53,17 @@ public class BusyBeaver {
 
         System.out.println();
         System.out.println("winningTransitions: " + winningTransitions.size());
+        TuringMachineWithHistory tm = new TuringMachineWithHistory(STEP_LIMIT);
         winningTransitions.forEach(t -> {
             System.out.println();
             printTransisitons(t);
+            System.out.println();
+            tm.run(t);
+            tm.printHistory();
         });
 
-        System.out.println();
-        TuringMachineWithHistory tm = new TuringMachineWithHistory(STEP_LIMIT);
-        tm.run(winningTransitions.get(0));
-        tm.printHistory();
+        System.out.println("---");
+        PrintUtils.runAndPrint(new TMState(new TMProgram(winningTransitions.get(0)), maxSteps.get(), maxSteps.get()));
 
         System.out.println();
         System.out.println("BB(" + numStates + ") = " + nf.format(maxSteps.get()));
@@ -76,11 +78,11 @@ public class BusyBeaver {
         // Submit all tasks to thread pool
         allTrans.stream()
                 //Filter out cases: 1. 1:0 stage cannot halt; 2. should transition to either stage 2 or last(halting) stage; 3. head goes to right (since left move will be a mirror)
-                .filter(sZero -> (sZero.nextState == STARTING_STATE + 1 || sZero.nextState == numStates) && sZero.direction == Direction.RIGHT)
+                .filter(sZero -> (sZero.getNextState() == STARTING_STATE + 1 || sZero.getNextState() == numStates) && sZero.getDirection() == Direction.RIGHT)
                 .forEach(sZero -> allTransWithHalt.stream()
-                    //Exclude jump to last stage if it's not a halting stage
-                    .filter(sOne -> sOne.nextState != HALT_STATE || sZero.nextState != numStates)
-                    .forEach(sOne -> executor.execute(() -> context.execute(sZero, sOne)))
+                //Exclude jump to last stage if it's not a halting stage
+                .filter(sOne -> numStates <= 2 || !sOne.isHalt() || sZero.getNextState() != numStates)
+                .forEach(sOne -> executor.execute(() -> context.execute(sZero, sOne)))
                 );
 
         // Graceful shutdown with error handling
@@ -120,19 +122,19 @@ public class BusyBeaver {
         public void run(Transition sZero, Transition sOne) {
             transitions[0] = sZero;
             transitions[1] = sOne;
-            _execute((byte) 2);
+            _execute(2);
         }
 
-        private void _execute(byte state) {
-            List<Transition> _allTrans = state < numStates || transitions[1].nextState == HALT_STATE ? allTrans : allTransWithHalt;
+        private void _execute(int state) {
+            List<Transition> _allTrans = state < numStates || transitions[1].isHalt() ? allTrans : allTransWithHalt;
             for (Transition sZero : _allTrans) {
                 transitions[state * 2 - 2] = sZero;
                 for (Transition sOne : _allTrans) {
                     transitions[state * 2 - 1] = sOne;
                     if (state < numStates) {
-                        _execute((byte) (state + 1));
+                        _execute(state + 1);
                     } else {
-                        if (transitions[1].nextState != HALT_STATE && ((sZero.nextState == HALT_STATE) == (sOne.nextState == HALT_STATE))) {
+                        if (!transitions[1].isHalt() && (sZero.isHalt() == sOne.isHalt())) {
                             //last transition should have one halt
                             //skipped.incrementAndGet();
                         } else {
@@ -173,13 +175,13 @@ public class BusyBeaver {
         // Generate all possible transitions for (currentState, readSymbol)
         for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) { // All possible writes
             for (Direction dir : Direction.values()) { // All directions
-                for (byte nextState = 1; nextState <= numStates; nextState++) { // All next states
+                for (int nextState = 1; nextState <= numStates; nextState++) { // All next states
                     list.add(new Transition(newSymbol, dir, nextState));
                 }
             }
         }
         if (withHaltState) {
-            list.add(new Transition(SYMBOL_ZERO, Direction.LEFT, HALT_STATE));
+            list.add(Transition.HALT);
         }
         return list;
     }

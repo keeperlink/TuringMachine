@@ -1,5 +1,7 @@
 package com.sliva.turingmachine;
 
+import static com.sliva.turingmachine.Transition.STARTING_STATE;
+import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.util.Arrays;
 import java.util.function.Function;
 import lombok.Setter;
@@ -10,51 +12,47 @@ import lombok.Setter;
  */
 public class TuringMachine {
 
-    private static final byte HALT_STATE = 0;
-    private static final byte STARTING_STATE = 1;
-
-    private final int stepLimit;
     private final byte[] tape;
     @Setter
     private Function<TuringMachineState, Boolean> callback;
 
     public TuringMachine(int stepLimit) {
-        this.stepLimit = stepLimit;
         tape = new byte[stepLimit * 2 + 2];
     }
 
     public int run(Transition[] transitions) {
-        int headPosition = tape.length / 2;
-        byte currentState = STARTING_STATE;
-        int steps = 0;
-        Arrays.fill(tape, (byte) 0);
+        Arrays.fill(tape, SYMBOL_ZERO);
+        TuringMachineState tms = new TuringMachineState(0, STARTING_STATE, tape.length / 2, tape);
+//        int headPosition = tape.length / 2;
+//        int currentState = STARTING_STATE;
+//        int steps = 0;
 
-        while (currentState != HALT_STATE) {
-            if (steps >= stepLimit) {
-                return -1; // Assume non-halting
+        while (!tms.isHaltState()) {
+            if (tms.isMaxStepsReached()) {
+                return -1;
             }
-            // Read symbol: true (1) if in set, false (0) otherwise
-            byte currentSymbol = tape[headPosition];
-            Transition t = transitions[currentState * 2 - 2 + currentSymbol];
+            byte currentSymbol = tape[tms.getHeadPosition()];
+            Transition t = transitions[tms.getCurrentState() * 2 - 2 + currentSymbol];
 
             // Write new symbol to tape
-            tape[headPosition] = t.newSymbol;
+            tape[tms.getHeadPosition()] = t.getNewSymbol();
 
             // Move head
-            headPosition += (t.direction == Direction.LEFT) ? -1 : 1;
+            tms.moveHead(t.getDirection());
 
             // Update state
-            currentState = t.nextState;
+            tms.setCurrentState(t.getNextState());
 
-            steps++;
+            // Increment step counter
+            tms.incrementStep();
 
             if (callback != null) {
-                if (!callback.apply(new TuringMachineState(steps, currentState, headPosition, Arrays.copyOf(tape, tape.length)))) {
+                if (!callback.apply(tms)) {
                     break;
                 }
             }
         }
-        return steps;
+        return tms.getStep();
     }
 
 }

@@ -28,25 +28,16 @@ public class TuringMachineWithHistory extends TuringMachine {
     }
 
     public void printHistory() {
+        System.out.println(" step  " + StringUtils.rightPad("tape", (maxPos - minPos + 1) * 3) + "  state");
         statesHistory.forEach(s -> {
-            System.out.println(StringUtils.leftPad(Integer.toString(s.getStep()), 5) + "  " + toString(s.getTape(), minPos, maxPos, s.getHeadPosition()) + "  " + s.getCurrentState());
+            System.out.println(StringUtils.leftPad(Integer.toString(s.getStep()), 5) + "  "
+                    + PrintUtils.toStringTape(s.getTape(), minPos, maxPos, s.getHeadPosition()) + "  "
+                    + (s.getCurrentState() == 0 ? "HALT" : Integer.toString(s.getCurrentState())));
         });
     }
 
-    private String toString(byte[] tape, int minPos, int maxPos, int headPos) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = minPos; i <= maxPos; i++) {
-            if (i == headPos) {
-                sb.append(tape[i] == 0 ? 'o' : '+');
-            } else {
-                sb.append(tape[i] == 0 ? '0' : '1');
-            }
-        }
-        return sb.toString();
-    }
-
     private Boolean processCallback(TuringMachineState turingMachineState) {
-        statesHistory.add(turingMachineState);
+        statesHistory.add(turingMachineState.copy());
         if (turingMachineState.getHeadPosition() < minPos) {
             minPos = turingMachineState.getHeadPosition();
         }
