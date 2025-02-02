@@ -13,10 +13,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- *
- * @author whost
- */
 public class BusyBeaver2 {
 
     private static final int STEP_LIMIT = 20000;

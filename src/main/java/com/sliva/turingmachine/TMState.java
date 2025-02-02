@@ -5,10 +5,6 @@ import static com.sliva.turingmachine.Transition.STARTING_STATE;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- *
- * @author whost
- */
 @Getter
 public class TMState {
 

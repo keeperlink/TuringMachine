@@ -3,10 +3,6 @@ package com.sliva.turingmachine;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- *
- * @author whost
- */
 @Getter
 public class Tape {
 
@@ -40,6 +36,10 @@ public class Tape {
         tape[head] = symbol;
     }
 
+    public int getUsedSize() {
+        return maxPos - minPos + 1;
+    }
+
     public void moveHead(Direction d) {
         if (d == Direction.LEFT) {
             head--;
@@ -68,5 +68,10 @@ public class Tape {
         this.minPos = t.minPos;
         this.maxPos = t.maxPos;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "Tape{" + "tape.lenth=" + tape.length + ", head=" + head + ", minPos=" + minPos + ", maxPos=" + maxPos + ", usedSize=" + getUsedSize() + "}";
     }
 }

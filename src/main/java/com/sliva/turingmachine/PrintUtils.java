@@ -7,10 +7,6 @@ import java.io.PrintStream;
 import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 
-/**
- *
- * @author whost
- */
 public final class PrintUtils {
 
     public static void printTransisitons(TMProgram tmProgram, PrintStream out) {
@@ -48,7 +44,7 @@ public final class PrintUtils {
                 maxPos = _tms.getPosTape();
             }
         } while (!_tms.isHaltState());
-        System.out.println("MinMax: (" + minPos + "," + maxPos + "), tapeSize=" + (maxPos - minPos + 1) + ", steps=" + _tms.getStep());
+        System.out.println("MinMax: (" + minPos + "," + maxPos + "), usedTapeSize=" + (maxPos - minPos + 1) + ", steps=" + _tms.getStep());
         return new MinMax(minPos, maxPos);
     }
 
@@ -60,26 +56,44 @@ public final class PrintUtils {
         }
     }
 
-    public static void runAndPrint(TMStateN tms, PrintStream out, Function<TMStateN, Boolean> doPrint) {
-        MinMax head = getMinMaxHeadPos(tms);
+    public static void printTransisitonsTable(TMProgramN tmProgram, PrintStream out) {
+        for (int state = STARTING_STATE; state <= tmProgram.getNumStates(); state++) {
+            out.print("\t" + stateToLetter(state));
+        }
+        for (byte symbol = 0; symbol < tmProgram.getNumSymbols(); symbol++) {
+            out.println();
+            out.print(symbol);
+            for (int state = STARTING_STATE; state <= tmProgram.getNumStates(); state++) {
+                out.print("\t" + tmProgram.getTransition(state, symbol).toShortString());
+            }
+        }
+        out.println();
+    }
 
-        out.println(" step  " + StringUtils.rightPad("tape", (head.getMax() - head.getMin() + 1) * 3) + "  state");
+    public static void runAndPrint(TMStateN tms, PrintStream out, Function<TMStateN, Boolean> doPrint) {
+        Tape finalTape = getFinalTape(tms);
+        out.println("finalTape: " + finalTape);
+        out.println();
+        out.println(" step trans " + StringUtils.rightPad("tape", finalTape.getUsedSize() * 3) + "  next_trans (prog_pos)");
         tms.runLoop(t -> {
             if (doPrint == null || doPrint.apply(tms)) {
-                out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 5) + "  "
-                        + toStringTape(tms.getTape().getTape(), head.getMin(), head.getMax(), tms.getTape().getHead()) + "  "
-                        + (tms.isHaltState() ? "HALT" : Integer.toString(tms.getState())));
+                out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 8) + " "
+                        + t.toShortString() + "  "
+                        + toStringTape(tms.getTape(), finalTape.getMinPos(), finalTape.getMaxPos()) + "  "
+                        + (tms.getState() == 0 ? "" : tms.getNextTransition().toShortString()
+                        + " (" + stateToLetter(tms.getState()) + tms.getTape().getSymbol() + ")"));
             }
         });
     }
 
-    public static MinMax getMinMaxHeadPos(TMStateN tms) {
+    public static char stateToLetter(int state) {
+        return (char) ('A' + state - 1);
+    }
+
+    public static Tape getFinalTape(TMStateN tms) {
         TMStateN _tms = tms.copy();
         _tms.runLoop(null);
-        int minPos = _tms.getTape().getMinPos();
-        int maxPos = _tms.getTape().getMaxPos();
-        System.out.println("MinMax: (" + minPos + "," + maxPos + "), tapeSize=" + (maxPos - minPos + 1) + ", steps=" + _tms.getStep());
-        return new MinMax(minPos, maxPos);
+        return _tms.getTape();
     }
 
     public static String toStringTape(byte[] tape, int minPos, int maxPos, int headPos) {
@@ -92,5 +106,13 @@ public final class PrintUtils {
             }
         }
         return sb.toString();
+    }
+
+    public static String toStringTape(Tape tape, int minPos, int maxPos) {
+        return toStringTape(tape.getTape(), minPos, maxPos, tape.getHead());
+    }
+
+    public static String toStringTape(Tape tape) {
+        return toStringTape(tape, tape.getMinPos(), tape.getMaxPos());
     }
 }

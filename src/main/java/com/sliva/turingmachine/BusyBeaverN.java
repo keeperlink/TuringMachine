@@ -11,20 +11,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- *
- * @author whost
- */
 public class BusyBeaverN {
 
-    private static final int STEP_LIMIT = 500_000;
-    private static final int TAPE_LIMIT = 4000;
+    private static final int STEP_LIMIT = 4_000_000;
+    private static final int TAPE_LIMIT = 2100;
     private static final int MAX_WINNERS = 6;
     private static final Duration MAX_RUNTIME = Duration.ofHours(1000);
     private static final long startTimestamp = System.currentTimeMillis();
 
-    private static final int numStates = 3;
-    private static final int numSymbols = 2;
+    private static final int numStates = 2;
+    private static final int numSymbols = 4;
 
     private static final int numTransitions = numStates * numSymbols;
     private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
@@ -40,6 +36,7 @@ public class BusyBeaverN {
     private static final NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
     public static void main(String[] args) {
+        System.out.println("Searching BB(" + numStates + "," + numSymbols + ")...");
         for (int i = 0; i < TM_STATE_BUFFER.length; i++) {
             TM_STATE_BUFFER[i] = new TMStateN(numStates, numSymbols, STEP_LIMIT, TAPE_LIMIT);
         }
@@ -63,7 +60,7 @@ public class BusyBeaverN {
         printWinners();
 
         System.out.println();
-        System.out.println("BB(" + numStates + ") = " + nf.format(maxSteps.get()));
+        System.out.println("BB(" + numStates + "," + numSymbols + ") = " + nf.format(maxSteps.get()));
     }
 
     private static void recursiveTuringMachine(TMStateN tmState, int nTransitions) {
@@ -134,7 +131,8 @@ public class BusyBeaverN {
                     + ", stepsLimitReached = " + nf.format(stepsLimitReached.get())
                     + " (time: " + Duration.ofMillis(stepsLimitReachedTimer.get()) + ")"
                     + ", tapeOutOfRange = " + nf.format(tapeOutOfRange.get())
-                    + " (time: " + Duration.ofMillis(tapeOutOfRangeTimer.get()) + ")");
+                    + " (time: " + Duration.ofMillis(tapeOutOfRangeTimer.get()) + ")"
+                    + ". Total runtime: " + Duration.ofMillis(System.currentTimeMillis() - startTimestamp) + ".");
         }
         if (tmState.getStep() == maxSteps.get() && winningPrograms.size() < MAX_WINNERS) {
             winningPrograms.add(tmState.getTmProgram().copy());
@@ -167,6 +165,9 @@ public class BusyBeaverN {
             PrintUtils.printTransisitons(t, System.out);
             System.out.println();
             PrintUtils.runAndPrint(new TMStateN(t, maxSteps.get(), maxSteps.get()), System.out, null);
+            System.out.println("^^^");
+            PrintUtils.printTransisitons(t, System.out);
+            System.out.println();
         });
     }
 }

@@ -4,10 +4,6 @@ import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
 import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.util.Arrays;
 
-/**
- *
- * @author whost
- */
 public class TMProgram {
 
     private final Transition[] program;

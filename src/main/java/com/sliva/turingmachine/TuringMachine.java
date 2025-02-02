@@ -6,10 +6,6 @@ import java.util.Arrays;
 import java.util.function.Function;
 import lombok.Setter;
 
-/**
- *
- * @author whost
- */
 public class TuringMachine {
 
     private final byte[] tape;

@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
-/**
- *
- * @author whost
- */
 public class TuringMachineWithHistory extends TuringMachine {
 
     private final List<TuringMachineState> statesHistory = new ArrayList<>();

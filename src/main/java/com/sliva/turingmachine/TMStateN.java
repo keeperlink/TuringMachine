@@ -5,10 +5,6 @@ import static com.sliva.turingmachine.Transition.STARTING_STATE;
 import java.util.function.Consumer;
 import lombok.Getter;
 
-/**
- *
- * @author whost
- */
 @Getter
 public class TMStateN {
 
@@ -53,6 +49,10 @@ public class TMStateN {
         tmProgram.setTransition(state, tape.getSymbol(), t);
     }
 
+    public int getProgramPos() {
+        return isHaltState() ? -1 : tmProgram.getPos(state, tape.getSymbol());
+    }
+
     public boolean hasNextTransition() {
         return getNextTransition() != null;
     }
@@ -65,7 +65,7 @@ public class TMStateN {
         return tmProgram.getTransitionsCount();
     }
 
-    public void applyTransition() {
+    public Transition applyTransition() {
         Transition t = getNextTransition();
         if (t == null) {
             throw new IllegalStateException("Next transition has not been defined");
@@ -78,12 +78,12 @@ public class TMStateN {
         tape.moveHead(t.getDirection());
         state = t.getNextState();
         step++;
+        return t;
     }
 
     public void runLoop(Consumer<Transition> consumer) {
         while (!isHaltState() && !isMaxStepsReached() && !isTapeOutOfRange()) {
-            Transition t = getNextTransition();
-            applyTransition();
+            Transition t = applyTransition();
             if (consumer != null) {
                 consumer.accept(t);
             }

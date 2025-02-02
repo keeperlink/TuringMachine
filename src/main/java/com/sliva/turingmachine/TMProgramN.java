@@ -3,10 +3,6 @@ package com.sliva.turingmachine;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- *
- * @author whost
- */
 public class TMProgramN {
 
     @Getter
@@ -21,22 +17,32 @@ public class TMProgramN {
         program = new Transition[numStates * numSymbols];
     }
 
-    public TMProgramN(Transition[] transitions, int numStates) {
-        this.numStates = numStates;
-        this.numSymbols = transitions.length / numStates;
+    public TMProgramN(Transition[] transitions, int numSymbols) {
+        this.numStates = transitions.length / numSymbols;
+        this.numSymbols = numSymbols;
         this.program = transitions;
     }
 
     public Transition getTransition(int state, byte symbol) {
-        validateState(state);
-        validateSymbol(symbol);
-        return program[(state - 1) * numSymbols + symbol];
+        if (state == Transition.HALT_STATE) {
+            return Transition.HALT;
+        } else {
+            validateState(state);
+            validateSymbol(symbol);
+            return program[getPos(state, symbol)];
+        }
     }
 
     public final void setTransition(int state, byte symbol, Transition t) {
         validateState(state);
         validateSymbol(symbol);
-        program[(state - 1) * numSymbols + symbol] = t;
+        program[getPos(state, symbol)] = t;
+    }
+
+    public int getPos(int state, byte symbol) {
+        validateState(state);
+        validateSymbol(symbol);
+        return (state - 1) * numSymbols + symbol;
     }
 
     public boolean hasInstruction(int state) {
@@ -67,7 +73,7 @@ public class TMProgramN {
     }
 
     public TMProgramN copy() {
-        return new TMProgramN(Arrays.copyOf(program, program.length), numStates);
+        return new TMProgramN(Arrays.copyOf(program, program.length), numSymbols);
     }
 
     public Transition[] toTransitionsArray() {

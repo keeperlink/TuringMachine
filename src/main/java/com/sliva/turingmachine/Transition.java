@@ -1,12 +1,9 @@
 package com.sliva.turingmachine;
 
+import static com.sliva.turingmachine.PrintUtils.stateToLetter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
- *
- * @author whost
- */
 @AllArgsConstructor
 @Getter
 public class Transition {
@@ -23,6 +20,10 @@ public class Transition {
 
     public boolean isHalt() {
         return nextState == HALT_STATE;
+    }
+
+    public String toShortString() {
+        return newSymbol + direction.name().substring(0, 1) + (char) (nextState == HALT_STATE ? 'H' : stateToLetter(nextState));
     }
 
     @Override
