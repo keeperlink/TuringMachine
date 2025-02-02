@@ -16,21 +16,9 @@ public class TMProgram {
         program = new Transition[numStates * 2];
     }
 
-//    public TMProgram(TMInstruction[] program) {
-//        this.program = program;
-//    }
     public TMProgram(Transition[] transitions) {
         this.program = transitions;
-//        this(transitions.length / 2);
-//        for (int i = 0; i < transitions.length; i++) {
-//            setTransition(i / 2 + 1, i % 2 == 0 ? SYMBOL_ZERO : SYMBOL_ONE, transitions[i]);
-//        }
     }
-//
-//    public TMInstruction getInstruction(int state) {
-//        validateState(state);
-//        return program[state - 1];
-//    }
 
     public Transition getTransition(int state, byte symbol) {
         validateState(state);

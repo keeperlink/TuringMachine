@@ -1,7 +1,5 @@
 package com.sliva.turingmachine;
 
-import static com.sliva.turingmachine.Transition.SYMBOL_ONE;
-import static com.sliva.turingmachine.Transition.SYMBOL_ZERO;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -17,38 +15,47 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author whost
  */
-public class BusyBeaver2 {
+public class BusyBeaverN {
 
-    private static final int STEP_LIMIT = 20000;
-    private static final int TAPE_LIMIT = 200;
+    private static final int STEP_LIMIT = 500_000;
+    private static final int TAPE_LIMIT = 4000;
     private static final int MAX_WINNERS = 6;
-    private static final Duration MAX_RUNTIME = Duration.ofMinutes(1000);
+    private static final Duration MAX_RUNTIME = Duration.ofHours(1000);
     private static final long startTimestamp = System.currentTimeMillis();
 
-    private static final int numStates = 4;
+    private static final int numStates = 3;
+    private static final int numSymbols = 2;
 
+    private static final int numTransitions = numStates * numSymbols;
     private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
-    private static final TMState[] TM_STATE_BUFFER = new TMState[numStates * 2];
+    private static final TMStateN[] TM_STATE_BUFFER = new TMStateN[numTransitions];
     private static final AtomicInteger maxSteps = new AtomicInteger();
     private static final AtomicLong executed = new AtomicLong();
-    private static final AtomicLong infLoops = new AtomicLong();
+    private static final AtomicLong stepsLimitReached = new AtomicLong();
+    private static final AtomicLong stepsLimitReachedTimer = new AtomicLong();
+    private static final AtomicLong tapeOutOfRange = new AtomicLong();
+    private static final AtomicLong tapeOutOfRangeTimer = new AtomicLong();
     private static final Map<Integer, AtomicLong> countPerSteps = new TreeMap<>();
-    private static final List<TMProgram> winningPrograms = Collections.synchronizedList(new ArrayList<>());
+    private static final List<TMProgramN> winningPrograms = Collections.synchronizedList(new ArrayList<>());
     private static final NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
     public static void main(String[] args) {
         for (int i = 0; i < TM_STATE_BUFFER.length; i++) {
-            TM_STATE_BUFFER[i] = new TMState(numStates, STEP_LIMIT, TAPE_LIMIT);
+            TM_STATE_BUFFER[i] = new TMStateN(numStates, numSymbols, STEP_LIMIT, TAPE_LIMIT);
         }
-        TMState tmState = TM_STATE_BUFFER[0];
-        for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) {
+        TMStateN tmState = TM_STATE_BUFFER[0];
+        for (byte newSymbol = 0; newSymbol < 2; newSymbol++) {
             tmState.setNextTransition(new Transition(newSymbol, Direction.RIGHT, 2));
             tmState.applyTransition();
             recursiveTuringMachine(tmState, 1);
             tmState.reverseTransition();
         }
 
-        System.out.println("executed = " + nf.format(executed.get()) + ", infLoops = " + nf.format(infLoops.get()));
+        System.out.println("executed = " + nf.format(executed.get())
+                + ", stepsLimitReached = " + nf.format(stepsLimitReached.get())
+                + " (time: " + Duration.ofMillis(stepsLimitReachedTimer.get()) + ")"
+                + ", tapeOutOfRange = " + nf.format(tapeOutOfRange.get())
+                + " (time: " + Duration.ofMillis(tapeOutOfRangeTimer.get()) + ")");
 
         System.out.println();
         countPerSteps.forEach((k, v) -> System.out.println(k + ": " + nf.format(v)));
@@ -59,12 +66,13 @@ public class BusyBeaver2 {
         System.out.println("BB(" + numStates + ") = " + nf.format(maxSteps.get()));
     }
 
-    private static void recursiveTuringMachine(TMState tmState, int nTransitions) {
-        TMState _tmState = TM_STATE_BUFFER[nTransitions].fillFrom(tmState);
+    private static void recursiveTuringMachine(TMStateN tmState, int nTransitions) {
+        TMStateN _tmState = TM_STATE_BUFFER[nTransitions].fillFrom(tmState);
         if (_tmState.hasNextTransition()) {
+            long timestamp = System.currentTimeMillis();
             do {
                 _tmState.applyTransition();
-                if (checkFinished(_tmState)) {
+                if (checkFinished(_tmState, timestamp)) {
                     return;
                 }
             } while (_tmState.hasNextTransition());
@@ -72,17 +80,21 @@ public class BusyBeaver2 {
         loopInitNewTransition(_tmState, nTransitions);
     }
 
-    private static void loopInitNewTransition(TMState tmState, int nTransitions) {
-        if (nTransitions == numStates * 2 - 1) {
+    private static void loopInitNewTransition(TMStateN tmState, int nTransitions) {
+        if (nTransitions == numTransitions - 1) {
             //if we are down to last undefined transition, then it must be a HALT.
             tmState.setNextTransition(Transition.HALT);
             tmState.applyTransition();
-            checkFinished(tmState);
+            checkFinished(tmState, System.currentTimeMillis());
         } else {
             tmState.setNextTransition(Transition.HALT); //just need to make current state non-null, simce it will affect on getLastState() response
             int loopMaxState = Math.min(tmState.getLastState() + 1, numStates);
             for (int nextState = 1; nextState <= loopMaxState; nextState++) {
                 for (Transition t : ALL_TRANSITIONS[nextState]) {
+                    if (t.getNewSymbol() > nTransitions + 1) {
+                        //
+                        continue;
+                    }
                     tmState.setNextTransition(t);
                     tmState.applyTransition();
                     recursiveTuringMachine(tmState, nTransitions + 1);
@@ -92,11 +104,16 @@ public class BusyBeaver2 {
         }
     }
 
-    private static boolean checkFinished(TMState tmState) {
+    private static boolean checkFinished(TMStateN tmState, long timeLoopStarts) {
         if (tmState.isMaxStepsReached()) {
-            //inf loop detected
             executed.incrementAndGet();
-            infLoops.incrementAndGet();
+            stepsLimitReached.incrementAndGet();
+            stepsLimitReachedTimer.addAndGet(System.currentTimeMillis() - timeLoopStarts);
+            return true;
+        } else if (tmState.isTapeOutOfRange()) {
+            executed.incrementAndGet();
+            tapeOutOfRange.incrementAndGet();
+            tapeOutOfRangeTimer.addAndGet(System.currentTimeMillis() - timeLoopStarts);
             return true;
         } else if (tmState.isHaltState()) {
             executed.incrementAndGet();
@@ -107,12 +124,17 @@ public class BusyBeaver2 {
         }
     }
 
-    private static void checkStats(TMState tmState) {
+    private static void checkStats(TMStateN tmState) {
         countPerSteps.computeIfAbsent(tmState.getStep(), k -> new AtomicLong()).incrementAndGet();
         if (tmState.getStep() > maxSteps.get()) {
             maxSteps.set(tmState.getStep());
             winningPrograms.clear();
-            System.out.println("  maxSteps = " + maxSteps.get() + ". executed = " + nf.format(executed.get()) + ", infLoops = " + nf.format(infLoops.get()));
+            System.out.println("  maxSteps = " + nf.format(maxSteps.get())
+                    + ". executed = " + nf.format(executed.get())
+                    + ", stepsLimitReached = " + nf.format(stepsLimitReached.get())
+                    + " (time: " + Duration.ofMillis(stepsLimitReachedTimer.get()) + ")"
+                    + ", tapeOutOfRange = " + nf.format(tapeOutOfRange.get())
+                    + " (time: " + Duration.ofMillis(tapeOutOfRangeTimer.get()) + ")");
         }
         if (tmState.getStep() == maxSteps.get() && winningPrograms.size() < MAX_WINNERS) {
             winningPrograms.add(tmState.getTmProgram().copy());
@@ -127,7 +149,7 @@ public class BusyBeaver2 {
         List<Transition>[] result = new List[numStates + 1];
         for (int nextState = 1; nextState <= numStates; nextState++) { // All next states
             List<Transition> list = new ArrayList<>();
-            for (byte newSymbol = SYMBOL_ZERO; newSymbol <= SYMBOL_ONE; newSymbol++) { // All possible writes
+            for (byte newSymbol = 0; newSymbol < numSymbols; newSymbol++) { // All possible writes
                 for (Direction dir : Direction.values()) { // All directions
                     list.add(new Transition(newSymbol, dir, nextState));
                 }
@@ -144,7 +166,7 @@ public class BusyBeaver2 {
             System.out.println();
             PrintUtils.printTransisitons(t, System.out);
             System.out.println();
-            PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()), System.out, null);
+            PrintUtils.runAndPrint(new TMStateN(t, maxSteps.get(), maxSteps.get()), System.out, null);
         });
     }
 }
