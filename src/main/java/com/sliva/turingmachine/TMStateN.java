@@ -82,7 +82,7 @@ public class TMStateN {
     }
 
     public void runLoop(Consumer<Transition> consumer) {
-        while (!isHaltState() && !isMaxStepsReached() && !isTapeOutOfRange()) {
+        while (!isFinshed()) {
             Transition t = applyTransition();
             if (consumer != null) {
                 consumer.accept(t);
@@ -101,6 +101,10 @@ public class TMStateN {
         oldState = HALT_STATE;
     }
 
+    public boolean isHaltState() {
+        return state == HALT_STATE;
+    }
+
     public boolean isMaxStepsReached() {
         return step >= maxSteps;
     }
@@ -109,8 +113,8 @@ public class TMStateN {
         return tape.isHeadOutOfRange();
     }
 
-    public boolean isHaltState() {
-        return state == HALT_STATE;
+    public boolean isFinshed() {
+        return isHaltState() || isMaxStepsReached() || isTapeOutOfRange();
     }
 
     public TMStateN copy() {

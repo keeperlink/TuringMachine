@@ -1,11 +1,17 @@
 package com.sliva.turingmachine;
 
+import static com.sliva.turingmachine.PrintUtils.getFinalTape;
+import static com.sliva.turingmachine.PrintUtils.stateSymbolToString;
 import static com.sliva.turingmachine.PrintUtils.stateToLetter;
+import static com.sliva.turingmachine.PrintUtils.toStringTape;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,17 +64,35 @@ public class RunTuringMachine {
                     .map(g -> new PatternRangeToExclude(g.getProgramPosGroup(),
                     g.getSize() / g.getGroupSize(),
                     g.getRangeList().get(g.getStart() + g.getGroupSize()).getStart(),
-                    g.getRangeList().get(g.getEnd() - g.getGroupSize()).getEnd()))
+                    g.getRangeList().get(g.getEnd() - g.getGroupSize()).getEnd(),
+                    new Range(g.getRangeList().get(g.getStart()).getStart(), g.getRangeList().get(g.getEnd()).getEnd())))
                     .toList();
             System.out.println("exGroups=" + exGroups);
-            PrintUtils.runAndPrint(tmState, out, tms -> exGroups.stream().filter(r -> r.inRange(tms.getStep())).findAny().map(exg -> {
-                if (!exg.isPrinted()) {
-                    out.println("    Group#" + exg.getUniqueGroupId() + " (" + exg.getProgramPosGroup().stream().map(pp -> progPosToString(pp, tmProgram.getNumSymbols())).collect(Collectors.joining(",")) + ") x " + exg.getRepeats());
-                    exg.setPrinted(true);
+
+            Tape finalTape = getFinalTape(tmState.copy());
+            out.println("finalTape: " + finalTape);
+            out.println();
+            out.println("    step trans   group    " + StringUtils.rightPad("tape", finalTape.getUsedSize() * 3) + "  next");
+            while (!tmState.isFinshed()) {
+                Transition t = tmState.applyTransition();
+                Optional<PatternRangeToExclude> grp = exGroups.stream().filter(r -> r.inRange(tmState.getStep()-1)).findFirst();
+                if (grp.isPresent()) {
+                    PatternRangeToExclude exg = grp.get();
+                    if (!exg.isPrinted()) {
+                        System.out.println("exg="+exg);
+                        out.println("    Group#" + exg.getUniqueGroupId() + " (" + exg.getProgramPosGroup().stream().map(pp -> progPosToString(pp, tmProgram.getNumSymbols())).collect(Collectors.joining(",")) + ") x " + exg.getRepeats());
+                        exg.setPrinted(true);
+                    }
+                } else if (!repeatRanges.stream().anyMatch(r -> r.inRange(tmState.getStep()-1))) {
+                    out.println(StringUtils.leftPad(Integer.toString(tmState.getStep()), 8) + " "
+                            + t.toShortString() + " "
+                            + stateSymbolToString(tmState.getOldState(), tmState.getOldSymbol()) + "  "
+                            + StringUtils.rightPad(exGroups.stream().filter(r -> r.getFull().inRange(tmState.getStep()-1)).findFirst().map(r -> "Group#" + r.getUniqueGroupId()).orElse(""), 9)
+                            + toStringTape(tmState.getTape(), finalTape.getMinPos(), finalTape.getMaxPos()) + "  "
+                            + (tmState.getState() == 0 ? "" : tmState.getNextTransition().toShortString() + " "
+                            + stateSymbolToString(tmState.getState(), tmState.getTape().getSymbol())));
                 }
-                return false;
-            }).orElse(!repeatRanges.stream().anyMatch(r -> r.inRange(tms.getStep())))
-            );
+            }
         }
     }
 
@@ -80,7 +104,7 @@ public class RunTuringMachine {
         tms.runLoop(null);
         int steps = tms.getStep();
         Tape finalTape = tms.getTape();
-        out.println("Steps=" + steps + ", tape: " + finalTape);
+        out.println("Steps=" + nf.format(steps) + "; Tape: " + finalTape);
         out.println("Final Tape Content:");
         out.println(PrintUtils.toStringTape(finalTape));
     }
@@ -92,15 +116,18 @@ public class RunTuringMachine {
         private final List<Integer> programPosGroup;
         private final int uniqueGroupId;
         private final int repeats;
+        private final Range full;
         @Setter
         private boolean printed;
 
-        public PatternRangeToExclude(List<Integer> programPosGroup, int repeats, int start, int end) {
+        public PatternRangeToExclude(List<Integer> programPosGroup, int repeats, int start, int end, Range full) {
             super(start, end);
             this.programPosGroup = programPosGroup;
             this.uniqueGroupId = uniqueGroups.computeIfAbsent(programPosGroup, t -> uniqueGroups.size());
             this.repeats = repeats;
+            this.full = full;
         }
         private static final Map<List<Integer>, Integer> uniqueGroups = new HashMap<>();
     }
+    private static final NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 }

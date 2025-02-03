@@ -71,19 +71,25 @@ public final class PrintUtils {
     }
 
     public static void runAndPrint(TMStateN tms, PrintStream out, Function<TMStateN, Boolean> doPrint) {
-        Tape finalTape = getFinalTape(tms);
+        Tape finalTape = getFinalTape(tms.copy());
         out.println("finalTape: " + finalTape);
         out.println();
-        out.println(" step trans " + StringUtils.rightPad("tape", finalTape.getUsedSize() * 3) + "  next_trans (prog_pos)");
-        tms.runLoop(t -> {
+        out.println("    step trans   " + StringUtils.rightPad("tape", finalTape.getUsedSize() * 3) + "  next");
+        while (!tms.isFinshed()) {
+            Transition t = tms.applyTransition();
             if (doPrint == null || doPrint.apply(tms)) {
                 out.println(StringUtils.leftPad(Integer.toString(tms.getStep()), 8) + " "
-                        + t.toShortString() + "  "
+                        + t.toShortString() + " "
+                        + stateSymbolToString(tms.getOldState(), tms.getOldSymbol()) + "  "
                         + toStringTape(tms.getTape(), finalTape.getMinPos(), finalTape.getMaxPos()) + "  "
-                        + (tms.getState() == 0 ? "" : tms.getNextTransition().toShortString()
-                        + " (" + stateToLetter(tms.getState()) + tms.getTape().getSymbol() + ")"));
+                        + (tms.getState() == 0 ? "" : tms.getNextTransition().toShortString() + " "
+                        + stateSymbolToString(tms.getState(), tms.getTape().getSymbol())));
             }
-        });
+        }
+    }
+
+    public static String stateSymbolToString(int state, int symbol) {
+        return String.valueOf(stateToLetter(state)) + symbol;
     }
 
     public static char stateToLetter(int state) {
@@ -91,9 +97,8 @@ public final class PrintUtils {
     }
 
     public static Tape getFinalTape(TMStateN tms) {
-        TMStateN _tms = tms.copy();
-        _tms.runLoop(null);
-        return _tms.getTape();
+        tms.runLoop(null);
+        return tms.getTape();
     }
 
     public static String toStringTape(byte[] tape, int minPos, int maxPos, int headPos) {

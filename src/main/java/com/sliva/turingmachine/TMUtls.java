@@ -1,7 +1,7 @@
 package com.sliva.turingmachine;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,19 +32,24 @@ public final class TMUtls {
         List<ProgramPosWithRange> hist = getCompactHistory(tms);
 
         for (int groupSize = 2; groupSize < 15; groupSize++) {
-            LinkedList<Integer> prevProgramPos = new LinkedList<>();
-            for (int i = 0; i < groupSize; i++) {
-                prevProgramPos.add(-1);
-            }
+            LinkedList<Integer> prevProgramPos = new LinkedList<>(Collections.nCopies(groupSize, -1));
             int startRepeating = 0;
             for (int h = 0; h < hist.size(); h++) {
                 ProgramPosWithRange pp = hist.get(h);
+                int hh = h;
                 if (pp.getProgramPos() != prevProgramPos.get(0)) {
-                    if (h - startRepeating > groupSize * (includeRepeats * 2 + 1)) {
-                        result.add(new ProgramPosGroups(prevProgramPos.stream().map(hist::get).map(ProgramPosWithRange::getProgramPos).toList(),
-                                startRepeating - groupSize + 1,
-                                h - 1,
-                                hist));
+                    if (h - startRepeating > groupSize * (includeRepeats * 2 + 1)
+                            && result.stream().noneMatch(p -> p.inRange(hh - 2))) {
+                        int groupStart = startRepeating - groupSize + 1;
+                        int groupEnd = h - 1;
+                        int size = groupEnd - groupStart + 1;
+                        for (int i = 0; i < size % groupSize; i++) {
+                            groupEnd--;
+                            prevProgramPos.addFirst(prevProgramPos.removeLast());
+                        }
+                        result.add(new ProgramPosGroups(new ArrayList<>(prevProgramPos),
+                                groupStart, groupEnd, hist));
+                        Collections.fill(prevProgramPos, -1);
                     }
                     startRepeating = h;
                 }
@@ -84,7 +89,7 @@ public final class TMUtls {
     }
 
     @Getter
-    @ToString(callSuper = true)
+    @ToString(callSuper = true, exclude = "rangeList")
     @EqualsAndHashCode(callSuper = true)
     public static class ProgramPosGroups extends Range {
 
