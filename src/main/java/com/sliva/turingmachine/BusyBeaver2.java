@@ -21,7 +21,7 @@ public class BusyBeaver2 {
     private static final Duration MAX_RUNTIME = Duration.ofMinutes(1000);
     private static final long startTimestamp = System.currentTimeMillis();
 
-    private static final int numStates = 4;
+    private static final int numStates = 3;
 
     private static final List<Transition>[] ALL_TRANSITIONS = generateAllTransitions();
     private static final TMState[] TM_STATE_BUFFER = new TMState[numStates * 2];
@@ -139,6 +139,7 @@ public class BusyBeaver2 {
         winningPrograms.forEach(t -> {
             System.out.println();
             PrintUtils.printTransisitons(t, System.out);
+            PrintUtils.printTransisitonsTable(new TMProgramN(t.toTransitionsArray(), 2), System.out);
             System.out.println();
             PrintUtils.runAndPrint(new TMState(t, maxSteps.get(), maxSteps.get()), System.out, null);
         });

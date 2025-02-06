@@ -1,0 +1,48 @@
+	A	B
+0	1RB	2LA
+1	2LB	2RB
+2	0LH	1LB
+Steps=38; Tape: Tape{tape.lenth=200000, head=100000, minPos=99994, maxPos=100002, usedSize=9}
+Final Tape Content:
+ 2  2  2  2  2  2 _2_ .  2 
+finalTape: Tape{tape.lenth=200000, head=100000, minPos=99994, maxPos=100002, usedSize=9}
+
+    step trans   group    tape                         next
+       1 1RB A0            .  .  .  .  .  .  1 ___ .   2LA B0
+       2 2LA B0            .  .  .  .  .  . _1_ 2  .   2LB A1
+       3 2LB A1            .  .  .  .  . ___ 2  2  .   2LA B0
+       4 2LA B0            .  .  .  . ___ 2  2  2  .   1RB A0
+       5 1RB A0            .  .  .  .  1 _2_ 2  2  .   1LB B2
+       6 1LB B2            .  .  .  . _1_ 1  2  2  .   2RB B1
+       7 2RB B1            .  .  .  .  2 _1_ 2  2  .   2RB B1
+       8 2RB B1            .  .  .  .  2  2 _2_ 2  .   1LB B2
+       9 1LB B2            .  .  .  .  2 _2_ 1  2  .   1LB B2
+      10 1LB B2            .  .  .  . _2_ 1  1  2  .   1LB B2
+      11 1LB B2            .  .  . ___ 1  1  1  2  .   2LA B0
+      12 2LA B0            .  . ___ 2  1  1  1  2  .   1RB A0
+      13 1RB A0            .  .  1 _2_ 1  1  1  2  .   1LB B2
+      14 1LB B2            .  . _1_ 1  1  1  1  2  .   2RB B1
+      15 2RB B1            .  .  2 _1_ 1  1  1  2  .   2RB B1
+      16 2RB B1            .  .  2  2 _1_ 1  1  2  .   2RB B1
+      17 2RB B1            .  .  2  2  2 _1_ 1  2  .   2RB B1
+      18 2RB B1            .  .  2  2  2  2 _1_ 2  .   2RB B1
+      19 2RB B1            .  .  2  2  2  2  2 _2_ .   1LB B2
+      20 1LB B2            .  .  2  2  2  2 _2_ 1  .   1LB B2
+      21 1LB B2            .  .  2  2  2 _2_ 1  1  .   1LB B2
+      22 1LB B2            .  .  2  2 _2_ 1  1  1  .   1LB B2
+      23 1LB B2            .  .  2 _2_ 1  1  1  1  .   1LB B2
+      24 1LB B2            .  . _2_ 1  1  1  1  1  .   1LB B2
+      25 1LB B2            . ___ 1  1  1  1  1  1  .   2LA B0
+      26 2LA B0           ___ 2  1  1  1  1  1  1  .   1RB A0
+      27 1RB A0            1 _2_ 1  1  1  1  1  1  .   1LB B2
+      28 1LB B2           _1_ 1  1  1  1  1  1  1  .   2RB B1
+      29 2RB B1            2 _1_ 1  1  1  1  1  1  .   2RB B1
+      30 2RB B1            2  2 _1_ 1  1  1  1  1  .   2RB B1
+      31 2RB B1            2  2  2 _1_ 1  1  1  1  .   2RB B1
+      32 2RB B1            2  2  2  2 _1_ 1  1  1  .   2RB B1
+      33 2RB B1            2  2  2  2  2 _1_ 1  1  .   2RB B1
+      34 2RB B1            2  2  2  2  2  2 _1_ 1  .   2RB B1
+      35 2RB B1            2  2  2  2  2  2  2 _1_ .   2RB B1
+      36 2RB B1            2  2  2  2  2  2  2  2 ___  2LA B0
+      37 2LA B0            2  2  2  2  2  2  2 _2_ 2   0LH A2
+      38 0LH A2            2  2  2  2  2  2 _2_ .  2   

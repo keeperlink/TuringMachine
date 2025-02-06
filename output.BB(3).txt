@@ -1,0 +1,30 @@
+	A	B	C
+0	1RB	1LB	1LC
+1	0LH	0RC	1LA
+Steps=21; Tape: Tape{tape.lenth=200000, head=99999, minPos=99999, maxPos=100003, usedSize=5}
+Final Tape Content:
+_1_ .  1  1  1 
+finalTape: Tape{tape.lenth=200000, head=99999, minPos=99999, maxPos=100003, usedSize=5}
+
+    step trans   group    tape             next
+       1 1RB A0            .  1 ___ .  .   1LB B0
+       2 1LB B0            . _1_ 1  .  .   0RC B1
+       3 0RC B1            .  . _1_ .  .   1LA C1
+       4 1LA C1            . ___ 1  .  .   1RB A0
+       5 1RB A0            .  1 _1_ .  .   0RC B1
+       6 0RC B1            .  1  . ___ .   1LC C0
+       7 1LC C0            .  1 ___ 1  .   1LC C0
+       8 1LC C0            . _1_ 1  1  .   1LA C1
+       9 1LA C1           ___ 1  1  1  .   1RB A0
+      10 1RB A0            1 _1_ 1  1  .   0RC B1
+      11 0RC B1            1  . _1_ 1  .   1LA C1
+      12 1LA C1            1 ___ 1  1  .   1RB A0
+      13 1RB A0            1  1 _1_ 1  .   0RC B1
+      14 0RC B1            1  1  . _1_ .   1LA C1
+      15 1LA C1            1  1 ___ 1  .   1RB A0
+      16 1RB A0            1  1  1 _1_ .   0RC B1
+      17 0RC B1            1  1  1  . ___  1LC C0
+      18 1LC C0            1  1  1 ___ 1   1LC C0
+      19 1LC C0            1  1 _1_ 1  1   1LA C1
+      20 1LA C1            1 _1_ 1  1  1   0LH A1
+      21 0LH A1           _1_ .  1  1  1   

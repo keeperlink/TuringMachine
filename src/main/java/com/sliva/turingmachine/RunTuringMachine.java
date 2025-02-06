@@ -20,10 +20,15 @@ import org.apache.commons.lang3.StringUtils;
 
 public class RunTuringMachine {
 
-    private static final int STEP_LIMIT = 100_000_000;
+    private static final int STEP_LIMIT = 10_000;
     private static final int TAPE_LIMIT = 100_000;
 
     public static void main(String[] args) throws Exception {
+        String bb3 = """
+                     \tA\tB\tC
+                     0\t1RB\t1LB\t1LC
+                     1\t0LH\t0RC\t1LA
+                     """;
         String bb4 = """
                       \tA\tB\tC\tD
                       0\t1RB\t1LA\t1RH\t1RD
@@ -47,7 +52,21 @@ public class RunTuringMachine {
                       2\t1RA\t3RB
                       3\t1RA\t1RH
                       """;
-        TMProgramN tmProgram = ParsingUtils.readProgram(bb2_4);
+        String skelets_1 = """
+                           0\t1
+                           A\t1LC\t1LE
+                           B\t---\t1LD
+                           C\t1RD\t0LD
+                           D\t1LA\t1RE
+                           E\t0LB\t0RC""";
+        String skelets_17 = """
+                            \t0\t1
+                            A\t1LB\t---
+                            B\t0RC\t1LE
+                            C\t0RD\t1RC
+                            D\t1LA\t1RB
+                            E\t0LB\t0LA""";
+        TMProgramN tmProgram = ParsingUtils.readProgram(skelets_1);
         String outputFile = "output.txt";
         //String outputFile = null;
 
@@ -58,7 +77,7 @@ public class RunTuringMachine {
         try ( var out = StringUtils.isBlank(outputFile) ? System.out : new PrintStream(new FileOutputStream(outputFile))) {
             PrintUtils.printTransisitonsTable(tmProgram, out);
             runAndPrintResultTape(tmState.copy(), out);
-            List<Range> repeatRanges = TMUtls.getRepeatingRanges(tmState.copy(), 1);
+            List<Range> repeatRanges = TMUtls.getRepeatingRanges(tmState.copy(), 3);
             System.out.println("repeatRanges=" + repeatRanges);
             List<PatternRangeToExclude> exGroups = TMUtls.getRepeatingGroups(tmState.copy(), 1).stream()
                     .map(g -> new PatternRangeToExclude(g.getProgramPosGroup(),
